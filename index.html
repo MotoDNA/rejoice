@@ -254,15 +254,39 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby2jMn8lBH8RcxU5OCENgL6
 const START = new Date(2026,8,14), END = new Date(2026,8,25,23,59,59);
 let entries = [], totalMembers = 0, me = '', adminCode = '', pendingPhoto = null;
 
-async function api(payload){
-  const r = await fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify(payload)
-  });
-  const j = await r.json();
-  if(!j.ok && j.error) throw new Error(j.error);
-  return j;
+// 중복 등록 방지용 키 (응답이 유실돼 재시도돼도 서버가 같은 글로 인식합니다)
+function newCid(){ return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,8) }
+
+const sleep = ms => new Promise(r=>setTimeout(r, ms));
+
+async function api(payload, tries=3){
+  const body = JSON.stringify(payload);   // 재시도해도 같은 본문(같은 cid)을 보냅니다
+  let lastErr;
+  for(let i=0;i<tries;i++){
+    try{
+      const r = await fetch(API_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body
+      });
+      const t = await r.text();
+      let j;
+      try{ j = JSON.parse(t) }
+      catch(_){
+        // 구글이 가끔 JSON 대신 오류 페이지를 돌려줍니다 - 이때만 다시 시도합니다
+        const e = new Error('서버가 잠시 응답하지 못했어요');
+        e.retry = true; throw e;
+      }
+      if(!j.ok && j.error) throw new Error(j.error);
+      return j;
+    }catch(e){
+      lastErr = e;
+      const transient = e.retry || e.name === 'TypeError';   // TypeError = 네트워크 끊김
+      if(transient && i < tries-1){ await sleep(700*(i+1)); continue }
+      throw e;
+    }
+  }
+  throw lastErr;
 }
 
 async function pull(){
@@ -459,7 +483,7 @@ document.getElementById('photoSubmit').onclick = async ()=>{
   if(!txt){ msg.textContent='감사 멘트 한 줄을 적어주세요'; return }
   const btn = document.getElementById('photoSubmit'); btn.disabled = true; msg.textContent = '올리는 중...';
   try{
-    await api({action:'add', type:'photo', name:me, text:txt, image:pendingPhoto});
+    await api({action:'add', type:'photo', name:me, text:txt, image:pendingPhoto, cid:newCid()});
     document.getElementById('photoText').value = '';
     document.getElementById('photoPreview').style.display = 'none';
     document.getElementById('photoFile').value = ''; pendingPhoto = null;
@@ -476,7 +500,7 @@ document.getElementById('poemSubmit').onclick = async ()=>{
   if(lines.some(l=>!l)){ msg.textContent='네 줄을 모두 채워주세요'; return }
   const btn = document.getElementById('poemSubmit'); btn.disabled = true; msg.textContent = '올리는 중...';
   try{
-    await api({action:'add', type:'poem', name:me, lines});
+    await api({action:'add', type:'poem', name:me, lines, cid:newCid()});
     [0,1,2,3].forEach(i=>document.getElementById('p'+i).value = '');
     msg.textContent = '올라갔어요! 고마워요 :)';
     await pull();

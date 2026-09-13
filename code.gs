@@ -6,7 +6,8 @@
 var ADMIN_CODE  = '0914';                 // 임원진 코드 (원하는 숫자로 바꾸세요)
 var FOLDER_NAME = '리조이스 챌린지 사진';   // 사진이 저장될 드라이브 폴더 이름
 
-var HEAD = ['id','type','name','text','l1','l2','l3','l4','image','likes','a','b','ts','deleted'];
+var HEAD = ['id','type','name','text','l1','l2','l3','l4','image','likes','a','b','ts','deleted','cid'];
+var CID_COL = HEAD.length;   // 중복 등록 방지용 키가 들어가는 열
 
 function doGet(e)  { return handle_(e); }
 function doPost(e) { return handle_(e); }
@@ -60,7 +61,23 @@ function sheet_(name, header) {
   return sh;
 }
 
-function entriesSheet_() { return sheet_('entries', HEAD); }
+function entriesSheet_() {
+  var sh = sheet_('entries', HEAD);
+  // cid 열이 없던 시절에 만들어진 시트를 위한 보정
+  if (sh.getLastColumn() < CID_COL) sh.getRange(1, CID_COL).setValue('cid');
+  return sh;
+}
+
+// 같은 cid로 이미 등록된 행을 찾습니다 (응답이 유실돼 재시도될 때 중복 방지)
+function findByCid_(cid) {
+  if (!cid) return 0;
+  var sh = entriesSheet_();
+  var last = sh.getLastRow();
+  if (last < 2) return 0;
+  var vals = sh.getRange(2, CID_COL, last - 1, 1).getValues();
+  for (var i = 0; i < vals.length; i++) if (String(vals[i][0]) === String(cid)) return i + 2;
+  return 0;
+}
 function configSheet_()  { return sheet_('config', ['key', 'value']); }
 
 function readAll_() {
@@ -98,6 +115,13 @@ function addEntry_(p) {
   var name = String(p.name || '').slice(0, 12);
   if (!name) return { ok: false, error: '이름이 없습니다' };
 
+  // 이미 같은 cid로 들어온 요청이면 새로 만들지 않고 기존 결과를 돌려줍니다
+  var dup = findByCid_(p.cid);
+  if (dup) {
+    var row = entriesSheet_().getRange(dup, 1, 1, HEAD.length).getValues()[0];
+    return { ok: true, id: String(row[0]), image: String(row[8]), duplicate: true };
+  }
+
   var id  = 'e' + new Date().getTime() + Math.floor(Math.random() * 1000);
   var url = '';
   if (p.type === 'photo') {
@@ -109,7 +133,7 @@ function addEntry_(p) {
   entriesSheet_().appendRow([
     id, p.type, name, String(p.text || '').slice(0, 100),
     L[0] || '', L[1] || '', L[2] || '', L[3] || '',
-    url, 0, 0, 0, new Date().getTime(), false
+    url, 0, 0, 0, new Date().getTime(), false, String(p.cid || '')
   ]);
   return { ok: true, id: id, image: url };
 }
