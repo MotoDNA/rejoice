@@ -131,6 +131,23 @@ footer .gift{font-family:"Gaegu",cursive;font-size:20px;color:var(--accent);disp
 .hidden{display:none !important}
 .vhide{position:absolute;width:1px;height:1px;opacity:0;left:-9999px}
 @media(prefers-reduced-motion:reduce){*{transition:none !important}}
+
+/* 사진 확대 보기 */
+.card img{cursor:zoom-in}
+#lightbox[hidden]{display:none}
+#lightbox{position:fixed;inset:0;z-index:90;background:rgba(38,30,24,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:14px;gap:12px;animation:lbIn .18s ease-out}
+@keyframes lbIn{from{opacity:0}to{opacity:1}}
+#lightbox img{max-width:100%;max-height:78vh;display:block;border:8px solid #fff;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);background:#EEE;object-fit:contain}
+#lbCap{color:#F3EDE4;text-align:center;max-width:640px;line-height:1.5;font-size:14px}
+#lbCap b{display:block;font-size:15px;margin-bottom:2px;color:#fff}
+#lbClose{position:absolute;top:10px;right:12px;width:42px;height:42px;border-radius:50%;
+  border:0;background:rgba(255,255,255,.15);color:#fff;font-size:22px;line-height:1;
+  cursor:pointer}
+#lbClose:hover{background:rgba(255,255,255,.28)}
+#lbHint{color:rgba(243,237,228,.6);font-size:12px}
 </style>
 </head>
 <body>
@@ -223,6 +240,12 @@ footer .gift{font-family:"Gaegu",cursive;font-size:20px;color:var(--accent);disp
   </footer>
 </div>
 
+<div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="사진 크게 보기">
+  <button id="lbClose" aria-label="닫기">&times;</button>
+  <img id="lbImg" alt="">
+  <div id="lbCap"></div>
+  <div id="lbHint">화면을 탭하면 닫혀요</div>
+</div>
 <script>
 /* ===== 여기에 구글 앱스 스크립트 주소를 넣으세요 ===== */
 const API_URL = 'https://script.google.com/macros/s/AKfycby2jMn8lBH8RcxU5OCENgL6j5WIu5mpCdxYLUeeHXIeYjukduEe9r0mQnQwOdrWj18e/exec';
@@ -348,7 +371,42 @@ function render(){
     : `지금까지 ${names.size}명이 참여했어요`;
 }
 
+const lb = {
+  el:  () => document.getElementById('lightbox'),
+  open(entry){
+    const box = this.el();
+    const img = document.getElementById('lbImg');
+    // 드라이브 썸네일은 sz 값으로 해상도를 올릴 수 있습니다
+    img.src = String(entry.image||'').replace(/([?&]sz=)w\d+/, '$1w1600');
+    img.alt = entry.name + '님의 감사 사진';
+    document.getElementById('lbCap').innerHTML =
+      `<b>${esc(entry.name)}</b>${esc(entry.text||'')}`;
+    box.hidden = false;
+    document.body.style.overflow = 'hidden';
+    history.pushState({lb:true}, '');
+  },
+  close(){
+    const box = this.el();
+    if(box.hidden) return;
+    box.hidden = true;
+    document.getElementById('lbImg').src = '';
+    document.body.style.overflow = '';
+  }
+};
+// 뒤로가기로도 닫히게
+window.addEventListener('popstate', ()=>lb.close());
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !lb.el().hidden) history.back() });
+document.getElementById('lightbox').addEventListener('click', ()=>history.back());
+
 document.addEventListener('click', async ev=>{
+  const shot = ev.target.closest('.card img');
+  if(shot){
+    const card = shot.closest('.card');
+    const id = card && card.querySelector('[data-like]') ? card.querySelector('[data-like]').dataset.like : '';
+    const e = entries.find(x=>x.id===id);
+    if(e && e.image) lb.open(e);
+    return;
+  }
   const like = ev.target.closest('[data-like]');
   if(like){
     const id = like.dataset.like;
