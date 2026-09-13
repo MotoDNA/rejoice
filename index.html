@@ -536,7 +536,10 @@ document.getElementById('adminBtn').onclick = async ()=>{
 
   me = localStorage.getItem('rejoiceName') || '';
   pull();
-  setInterval(pull, 30000);
+  // 화면을 보고 있을 때만 주기적으로 새로 받아옵니다.
+  // (탭을 켜둔 채 두어도 서버 호출이 쌓이지 않게 해서 구글 호출 한도를 아낍니다)
+  setInterval(()=>{ if(!document.hidden) pull() }, 90000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) pull() });
 })();
 </script>
 </body>
