@@ -46,7 +46,8 @@ function route_(p) {
 }
 
 /* ---------- 시트 ---------- */
-function book_() { return SpreadsheetApp.getActiveSpreadsheet(); }
+var SHEET_ID = '1iUKIQJSwh0d5HBXZ5C67OBUUMUTyCpnjnmi89nXizEw';  // 데이터가 저장될 스프레드시트 ID
+function book_() { return SpreadsheetApp.openById(SHEET_ID); }
 
 function sheet_(name, header) {
   var ss = book_();
