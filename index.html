@@ -148,7 +148,7 @@ footer .gift{font-family:"Gaegu",cursive;font-size:20px;color:var(--accent);disp
   cursor:pointer}
 #lbClose:hover{background:rgba(255,255,255,.28)}
 #lbHint{color:rgba(243,237,228,.6);font-size:12px}
-</style>
+.form textarea{resize:vertical;min-height:72px;line-height:1.6}</style>
 </head>
 <body>
 <div class="wrap">
@@ -192,8 +192,8 @@ footer .gift{font-family:"Gaegu",cursive;font-size:20px;color:var(--accent);disp
       <button type="button" class="filebtn" id="pickBtn">사진 고르기</button>
       <input type="file" id="photoFile" accept="image/*" class="vhide">
       <img id="photoPreview" alt="">
-      <label style="margin-top:14px">감사 멘트 한 줄</label>
-      <input type="text" id="photoText" maxlength="80" placeholder="예) 오늘도 무사히 하루를 주셔서 감사합니다">
+      <label style="margin-top:14px">감사 멘트</label>
+      <textarea id="photoText" rows="3" placeholder="예) 오늘도 무사히 하루를 주셔서 감사합니다"></textarea>
       <button class="btn" id="photoSubmit">올리기</button>
       <div class="msg" id="photoMsg"></div>
     </div>
@@ -208,10 +208,10 @@ footer .gift{font-family:"Gaegu",cursive;font-size:20px;color:var(--accent);disp
     <div class="criteria">좋아요 개수 5점 &nbsp;+&nbsp; 참신성 3점 &nbsp;+&nbsp; 문학성 2점</div>
 
     <div class="form">
-      <div class="acro"><span>리</span><input type="text" id="p0" maxlength="40" placeholder="리..."></div>
-      <div class="acro"><span>조</span><input type="text" id="p1" maxlength="40" placeholder="조..."></div>
-      <div class="acro"><span>이</span><input type="text" id="p2" maxlength="40" placeholder="이..."></div>
-      <div class="acro"><span>스</span><input type="text" id="p3" maxlength="40" placeholder="스..."></div>
+      <div class="acro"><span>리</span><input type="text" id="p0" placeholder="리..."></div>
+      <div class="acro"><span>조</span><input type="text" id="p1" placeholder="조..."></div>
+      <div class="acro"><span>이</span><input type="text" id="p2" placeholder="이..."></div>
+      <div class="acro"><span>스</span><input type="text" id="p3" placeholder="스..."></div>
       <button class="btn" id="poemSubmit">올리기</button>
       <div class="msg" id="poemMsg"></div>
     </div>
