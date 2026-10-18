@@ -221,7 +221,7 @@ function saveImage_(dataUrl, id) {
    ========================================================= */
 
 var VOTE_SALT   = 'rejoice-2027-vote-v1';   // 바꾸면 기존 투표를 못 찾습니다
-var CANDIDATES  = ['최진솔','최환준','배우리','장민','이준호'];
+var CANDIDATES  = ['배우리','이준호','장민','최진솔','최환준'];
 var MAX_PICK    = 2;
 var VOTE_HEAD   = ['key','a','b','ts'];
 
